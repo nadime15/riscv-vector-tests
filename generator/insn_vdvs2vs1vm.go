@@ -17,7 +17,8 @@ func (i *Insn) genCodeVdVs2Vs1Vm(pos int) []string {
 	vs2Size := iff(vs2Widening, 2, 1)
 
 	sews := iff(float, i.floatSEWs(), allSEWs)
-	sews = iff(vdWidening || vs2Widening, sews[:len(sews)-1], sews)
+	restrictSEW := (vdWidening || vs2Widening)
+	sews = iff(restrictSEW, sews[:len(sews)-1], sews)
 	sews = iff(sew64Only, []SEW{64}, sews)
 
 	lmuls := iff((vdWidening || vs2Widening) && !isWideningReduction,
@@ -29,6 +30,7 @@ func (i *Insn) genCodeVdVs2Vs1Vm(pos int) []string {
 		[]bool{false, true},
 		i.rms(),
 	)
+
 	res := make([]string, 0, len(combinations))
 
 	for _, c := range combinations[pos:] {
@@ -56,7 +58,6 @@ func (i *Insn) genCodeVdVs2Vs1Vm(pos int) []string {
 			vd * 2,
 			vd*2 + int(vs2EMUL1),
 		}
-
 		if vdEMUL1 == vs2EMUL1 && !strings.HasPrefix(i.Name, "vrgatherei16") {
 			vd1, vs1, vs2 := getVRegs(vdEMUL1, false, i.Name)
 			vd = vd1
@@ -78,6 +79,7 @@ func (i *Insn) genCodeVdVs2Vs1Vm(pos int) []string {
 
 			builder.WriteString(fmt.Sprintf("%s v%d, v%d, v%d%s\n",
 				i.Name, vd, vss[1], vss[0], v0t(c.Mask)))
+
 			builder.WriteString("# -------------- TEST END   --------------\n")
 
 			builder.WriteString(i.gResultDataAddr())
